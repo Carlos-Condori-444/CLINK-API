@@ -44,7 +44,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // ===== PÚBLICOS =====
                         .requestMatchers("/api/v1/auth/**").permitAll()   // registro y login
-                        .requestMatchers("/r/**").permitAll()             // redirección pública
+                        .requestMatchers("/r/**", "/qr/**").permitAll()          // redirección pública
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
