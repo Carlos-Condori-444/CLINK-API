@@ -1,5 +1,8 @@
 package pe.edu.utp.clink.api.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,11 +19,15 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/etiquetas")
 @RequiredArgsConstructor
+@Tag(name = "Etiquetas", description = "Gestión de etiquetas (solo plan Premium)")
 public class EtiquetaController {
 
     private final EtiquetaService etiquetaService;
 
     @PostMapping
+    @Operation(summary = "Crear etiqueta",
+            description = "Crea una nueva etiqueta. Requiere plan Premium.",
+            security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<EtiquetaResponse> crear(
             @AuthenticationPrincipal UsuarioDetails userDetails,
             @Valid @RequestBody EtiquetaRequest request) {
@@ -29,12 +36,18 @@ public class EtiquetaController {
     }
 
     @GetMapping
+    @Operation(summary = "Listar etiquetas del usuario",
+            description = "Devuelve todas las etiquetas creadas por el usuario autenticado.",
+            security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<List<EtiquetaResponse>> listar(
             @AuthenticationPrincipal UsuarioDetails userDetails) {
         return ResponseEntity.ok(etiquetaService.listar(userDetails.getUsuario().getId()));
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Eliminar etiqueta",
+            description = "Elimina una etiqueta propia. Solo el propietario puede hacerlo.",
+            security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Void> eliminar(
             @PathVariable Long id,
             @AuthenticationPrincipal UsuarioDetails userDetails) {
@@ -43,6 +56,9 @@ public class EtiquetaController {
     }
 
     @PostMapping("/enlace/{enlaceId}/etiqueta/{etiquetaId}")
+    @Operation(summary = "Asignar etiqueta a un enlace",
+            description = "Vincula una etiqueta existente a un enlace del mismo usuario.",
+            security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Void> asignar(
             @PathVariable Long enlaceId,
             @PathVariable Long etiquetaId,
@@ -52,6 +68,9 @@ public class EtiquetaController {
     }
 
     @DeleteMapping("/enlace/{enlaceId}/etiqueta/{etiquetaId}")
+    @Operation(summary = "Quitar etiqueta de un enlace",
+            description = "Desvincula una etiqueta de un enlace del mismo usuario.",
+            security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Void> quitar(
             @PathVariable Long enlaceId,
             @PathVariable Long etiquetaId,
