@@ -1,5 +1,8 @@
 package pe.edu.utp.clink.api.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,13 +20,15 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@Tag(name = "Enlaces", description = "Gestión de enlaces acortados")
 public class EnlaceController {
 
     private final EnlaceService enlaceService;
 
-    // ===== PRIVADOS (requieren JWT) =====
-
     @PostMapping("/api/v1/enlaces")
+    @Operation(summary = "Crear un enlace acortado",
+            description = "Requiere autenticación. Valida el límite del plan y la unicidad del alias.",
+            security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<EnlaceResponse> crear(
             @AuthenticationPrincipal UsuarioDetails userDetails,
             @Valid @RequestBody EnlaceRequest request) {
@@ -33,6 +38,9 @@ public class EnlaceController {
     }
 
     @GetMapping("/api/v1/enlaces")
+    @Operation(summary = "Listar enlaces del usuario",
+            description = "Devuelve solo los enlaces activos (no eliminados) del usuario autenticado.",
+            security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<List<EnlaceResponse>> listar(
             @AuthenticationPrincipal UsuarioDetails userDetails) {
         Long usuarioId = userDetails.getUsuario().getId();
@@ -40,6 +48,9 @@ public class EnlaceController {
     }
 
     @GetMapping("/api/v1/enlaces/{id}")
+    @Operation(summary = "Obtener un enlace por ID",
+            description = "Solo el propietario puede consultarlo.",
+            security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<EnlaceResponse> obtener(
             @PathVariable Long id,
             @AuthenticationPrincipal UsuarioDetails userDetails) {
@@ -48,6 +59,9 @@ public class EnlaceController {
     }
 
     @DeleteMapping("/api/v1/enlaces/{id}")
+    @Operation(summary = "Eliminar un enlace (soft delete)",
+            description = "Marca el enlace como ELIMINADO. No borra la fila físicamente.",
+            security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Void> eliminar(
             @PathVariable Long id,
             @AuthenticationPrincipal UsuarioDetails userDetails) {
@@ -56,9 +70,10 @@ public class EnlaceController {
         return ResponseEntity.noContent().build();
     }
 
-    // ===== PÚBLICO (redirección) =====
-
     @GetMapping("/r/{codigo}")
+    @Operation(summary = "Redirección pública",
+            description = "Endpoint público. Registra el clic y redirige a la URL original con HTTP 302.",
+            security = {})
     public ResponseEntity<Void> redirigir(
             @PathVariable String codigo,
             HttpServletRequest request) {

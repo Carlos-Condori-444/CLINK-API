@@ -1,5 +1,8 @@
 package pe.edu.utp.clink.api.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -18,13 +21,19 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@Tag(name = "QR", description = "Generación y descarga de códigos QR")
 public class QrController {
 
     private final QrService qrService;
 
-    // ===== PRIVADOS =====
-
     @PostMapping("/api/v1/qr")
+    @Operation(summary = "Crear código QR",
+            description = """
+                       Crea un QR de dos tipos:
+                       - INDEPENDIENTE: para una URL externa. Consume cupo del plan.
+                       - ENLACE: para un enlace propio. Solo Premium.
+                       """,
+            security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<QrResponse> crear(
             @AuthenticationPrincipal UsuarioDetails userDetails,
             @Valid @RequestBody QrRequest request) {
@@ -33,12 +42,18 @@ public class QrController {
     }
 
     @GetMapping("/api/v1/qr")
+    @Operation(summary = "Listar QRs del usuario",
+            description = "Devuelve todos los QRs creados por el usuario autenticado.",
+            security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<List<QrResponse>> listar(
             @AuthenticationPrincipal UsuarioDetails userDetails) {
         return ResponseEntity.ok(qrService.listar(userDetails.getUsuario().getId()));
     }
 
     @GetMapping("/api/v1/qr/{id}")
+    @Operation(summary = "Obtener QR por ID",
+            description = "Devuelve los datos del QR incluyendo la imagen en base64.",
+            security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<QrResponse> obtener(
             @PathVariable Long id,
             @AuthenticationPrincipal UsuarioDetails userDetails) {
@@ -46,6 +61,9 @@ public class QrController {
     }
 
     @GetMapping("/api/v1/qr/{id}/descargar")
+    @Operation(summary = "Descargar imagen PNG del QR",
+            description = "Devuelve el archivo PNG listo para descargar.",
+            security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<byte[]> descargar(
             @PathVariable Long id,
             @AuthenticationPrincipal UsuarioDetails userDetails) {
@@ -56,9 +74,10 @@ public class QrController {
                 .body(imagen);
     }
 
-    // ===== PÚBLICO: redirección de QR =====
-
     @GetMapping("/qr/{codigo}")
+    @Operation(summary = "Redirección pública de QR",
+            description = "Endpoint público. Registra el clic y redirige a la URL de destino.",
+            security = {})
     public ResponseEntity<Void> redirigir(@PathVariable String codigo) {
         String url = qrService.redirigir(codigo);
         return ResponseEntity.status(HttpStatus.FOUND)
